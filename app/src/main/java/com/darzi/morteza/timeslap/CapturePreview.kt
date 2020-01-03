@@ -1,15 +1,15 @@
 package com.darzi.morteza.timeslap
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.hardware.Camera
 import android.util.AttributeSet
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 
-
-class CapturePreview(context: Context, attrs: AttributeSet) : SurfaceView(context, attrs), SurfaceHolder.Callback {
+ class CapturePreview(context: Context, attrs: AttributeSet) : SurfaceView(context, attrs), SurfaceHolder.Callback {
     internal var holder: SurfaceHolder
-    internal lateinit var mCamera : Camera
     init {
         holder = getHolder()
         holder.addCallback(this)
@@ -45,23 +45,23 @@ class CapturePreview(context: Context, attrs: AttributeSet) : SurfaceView(contex
 
     companion object {
 
-//        var mBitmap: Bitmap
-//lateinit var mCamera: Camera
+        lateinit var mBitmap: Bitmap
+        internal lateinit var mCamera: Camera
         /***
          *
          * Take a picture and and convert it from bytes[] to Bitmap.
          *
          */
-//        fun takeAPicture() {
-//
-//            val mPictureCallback = object : Camera.PictureCallback {
-//                override fun onPictureTaken(data: ByteArray, camera: Camera) {
-//
-//                    val options = BitmapFactory.Options()
-//                    mBitmap = BitmapFactory.decodeByteArray(data, 0, data.size, options)
-//                }
-//            }
-//            mCamera.takePicture(null, null, mPictureCallback)
-//        }
+        fun takeAPicture() {
+
+            val mPictureCallback = object : Camera.PictureCallback {
+                override fun onPictureTaken(data: ByteArray, camera: Camera) {
+
+                    val options = BitmapFactory.Options()
+                    mBitmap = BitmapFactory.decodeByteArray(data, 0, data.size, options)
+                }
+            }
+            mCamera.takePicture(null, null, mPictureCallback)
+        }
     }
 }
