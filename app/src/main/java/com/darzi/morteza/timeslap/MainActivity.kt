@@ -3,8 +3,6 @@ package com.darzi.morteza.timeslap
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
-import android.hardware.Camera
-import android.hardware.Camera.PictureCallback
 import android.media.ExifInterface
 import android.os.Bundle
 import android.os.Environment
@@ -13,67 +11,69 @@ import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.View
 import android.widget.Button
-import android.widget.FrameLayout
 import android.widget.ImageView
+import com.camerakit.CameraKitView
 import java.io.File
-import java.io.FileNotFoundException
 import java.io.FileOutputStream
-import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 
 
-
-
 class MainActivity : AppCompatActivity()  {
-    private var mCamera: Camera? = null
-    private var mCameraPreview: CameraPreview? = null
+    private var cameraKitView: CameraKitView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        mCamera = getCameraInstance()
-        mCameraPreview = CameraPreview(this, mCamera!!)
-        val preview = findViewById<View>(R.id.camera_preview) as FrameLayout
-        preview.addView(mCameraPreview)
+        cameraKitView = findViewById(R.id.camera)
 
         val captureButton = findViewById<View>(R.id.button_capture) as Button
-        captureButton.setOnClickListener{
-                mCamera!!.takePicture(null, null, mPicture)
+
+        captureButton.setOnClickListener {
+            cameraKitView!!.captureImage(CameraKitView.ImageCallback { cameraKitView, capturedImage ->
+                val savedPhoto = getOutputMediaFile()
+                try {
+                    val outputStream = FileOutputStream(savedPhoto!!.path)
+                    outputStream.write(capturedImage)
+                    outputStream.close()
+                } catch (e: java.io.IOException) {
+                    e.printStackTrace()
+                }
+            })
         }
 
-        val imageView = findViewById(R.id.myImageView) as ImageView
+        val imageView = findViewById<ImageView>(R.id.myImageView)
         imageView.setImageBitmap(getLastTakenImage())
     }
 
-    private fun getCameraInstance(): Camera? {
-        var camera: Camera? = null
-        try {
-            camera = Camera.open()
-        } catch (e: Exception) {
-            // cannot get camera or does not exist
-        }
-
-        return camera
+    override fun onStart() {
+        super.onStart()
+        cameraKitView!!.onStart()
     }
 
-    var mPicture: PictureCallback = PictureCallback { data, camera ->
-        val pictureFile = getOutputMediaFile() ?: return@PictureCallback
-        try {
-            val fos = FileOutputStream(pictureFile)
-            fos.write(data)
-            fos.close()
-        } catch (e: FileNotFoundException) {
+    override fun onResume() {
+        super.onResume()
+        cameraKitView!!.onResume()
+    }
 
+    override fun onPause() {
+        cameraKitView!!.onPause()
+        super.onPause()
+    }
 
-        } catch (e: IOException) {
-        }
+    override fun onStop() {
+        cameraKitView!!.onStop()
+        super.onStop()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        cameraKitView!!.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
     private fun getOutputMediaFile(): File? {
         val mediaStorageDir = File(
-                Environment
-                        .getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),"Camera")
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),"Camera")
         if (!mediaStorageDir.exists()) {
             if (!mediaStorageDir.mkdirs()) {
                 Log.d("MyCameraApp", "failed to create directory")
@@ -84,7 +84,7 @@ class MainActivity : AppCompatActivity()  {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss")
                 .format(Date())
         val mediaFile: File
-        mediaFile = File(mediaStorageDir.getPath() + File.separator
+        mediaFile = File(mediaStorageDir.path + File.separator
                 + timeStamp + ".jpg")
 
         return mediaFile
@@ -102,7 +102,7 @@ class MainActivity : AppCompatActivity()  {
             if (imageFile.exists()) {   // TODO: is there a better way to do this?
                 var bm = BitmapFactory.decodeFile(imageLocation)
                 try {
-                    val exif = ExifInterface(imageFile.getAbsolutePath())
+                    val exif = ExifInterface(imageFile.absolutePath)
                     val orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, 1)
                     Log.d("EXIF", "Exif: $orientation")
                     val matrix = Matrix()
@@ -124,8 +124,8 @@ class MainActivity : AppCompatActivity()  {
 
     private fun getLastImageTakenAddressLocation(): String? {
         val projection = arrayOf(MediaStore.Images.ImageColumns._ID, MediaStore.Images.ImageColumns.DATA, MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME, MediaStore.Images.ImageColumns.DATE_TAKEN, MediaStore.Images.ImageColumns.MIME_TYPE)
-        val cursor = applicationContext.getContentResolver()
-                .query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, projection,
+        val cursor = applicationContext.contentResolver
+                .query( MediaStore.Images.Media.EXTERNAL_CONTENT_URI, projection,
                         null, null, MediaStore.Images.ImageColumns.DATE_TAKEN + " DESC")
 
         // Put it in the image view

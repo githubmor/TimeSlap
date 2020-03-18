@@ -7,15 +7,15 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-
-    <FrameLayout
-        android:id="@+id/camera_preview"
+    <com.camerakit.CameraKitView
+        android:id="@+id/camera"
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        android:adjustViewBounds="true"/>
 
     <Button
         android:id="@+id/button_capture"
@@ -33,6 +33,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:alpha="0.5"
+        android:adjustViewBounds="true"
         android:background="@android:color/holo_blue_bright"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
